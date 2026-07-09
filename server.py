@@ -52,6 +52,10 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
         else:
             return super().do_GET()
 
+    def end_headers(self):
+        self.send_header('Access-Control-Allow-Origin', '*')
+        super().end_headers()
+
 def main():
     # Set directory to workspace root to serve index.html correctly
     os.chdir(os.path.dirname(os.path.abspath(__file__)))

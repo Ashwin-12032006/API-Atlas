@@ -1630,7 +1630,7 @@ def run_sherlock(username):
             appendTermLine("verificationConsole", "Connecting to Python backend event stream...", "term-log");
             
             // Connect to real SSE stream
-            eventSource = new EventSource('/run-verify');
+            eventSource = new EventSource('http://localhost:8000/run-verify');
             
             eventSource.onmessage = function(event) {{
                 const line = event.data;
@@ -1640,7 +1640,7 @@ def run_sherlock(username):
                     appendTermLine("verificationConsole", "Live Subprocess Execution Complete.", "term-success");
                     
                     // Fetch updated verification metrics from file
-                    fetch('/verification_report.json')
+                    fetch('http://localhost:8000/verification_report.json')
                         .then(function(res) {{ return res.json(); }})
                         .then(function(data) {{
                             const firstPassAcc = data.first_pass_accuracy.toFixed(1);
