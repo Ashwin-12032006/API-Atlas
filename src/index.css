@@ -95,3 +95,38 @@ select option {
   background-color: #0c0e17;
   color: #f8fafc;
 }
+
+@keyframes dash {
+  to {
+    stroke-dashoffset: -40;
+  }
+}
+
+.animate-dash {
+  stroke-dasharray: 6, 12;
+  animation: dash 2s linear infinite;
+}
+
+@keyframes draw-graph {
+  from {
+    stroke-dashoffset: 100;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.animate-draw-graph {
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  animation: draw-graph 2.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes led-blink {
+  0%, 100% { opacity: 0.3; transform: scale(0.9); }
+  50% { opacity: 1; transform: scale(1.1); }
+}
+
+.animate-led {
+  animation: led-blink 1.5s ease-in-out infinite;
+}

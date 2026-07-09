@@ -258,9 +258,20 @@ export default function App() {
                   Intelligent command center managing SaaS crawlers and context-aware agents.
                 </p>
               </div>
-              <div className="bg-black/40 rounded-lg p-3 mt-4 font-mono text-[10px] text-muted-foreground flex flex-col gap-1 border border-white/5">
-                <div>&gt; com.composio.verify - RUNNING</div>
-                <div>&gt; task: apps_seed_audit (100%)</div>
+              <div className="flex items-center justify-between mt-4 gap-4">
+                <div className="bg-black/40 rounded-lg p-2.5 font-mono text-[9px] text-muted-foreground flex-1 flex flex-col gap-0.5 border border-white/5">
+                  <div>&gt; verify.py - RUNNING</div>
+                  <div>&gt; task: apps_seed_audit</div>
+                </div>
+                <div className="grid grid-cols-4 gap-1.5 w-10 h-10 shrink-0">
+                  {Array.from({ length: 16 }).map((_, i) => (
+                    <span 
+                      key={i} 
+                      className="w-1.5 h-1.5 rounded-full bg-emerald-500/80 animate-led"
+                      style={{ animationDelay: `${(i * 179) % 1500}ms` }}
+                    />
+                  ))}
+                </div>
               </div>
             </div>
 
@@ -276,17 +287,25 @@ export default function App() {
                   Thought mapping and dynamic visual intelligence representing API structures.
                 </p>
               </div>
-              {/* Custom SVG Nodes representation */}
+              {/* Custom SVG Nodes representation with flowing laser lines */}
               <div className="h-16 flex items-center justify-center relative mt-4">
                 <svg className="w-full h-full" viewBox="0 0 200 60">
-                  <circle cx="30" cy="30" r="4" fill="#9061f9" />
-                  <circle cx="100" cy="15" r="4" fill="#3b82f6" />
-                  <circle cx="100" cy="45" r="4" fill="#10b981" />
-                  <circle cx="170" cy="30" r="4" fill="#fff" />
-                  <line x1="34" y1="30" x2="96" y2="15" stroke="rgba(255,255,255,0.15)" strokeWidth="1" />
-                  <line x1="34" y1="30" x2="96" y2="45" stroke="rgba(255,255,255,0.15)" strokeWidth="1" />
-                  <line x1="104" y1="15" x2="166" y2="30" stroke="rgba(255,255,255,0.15)" strokeWidth="1" />
-                  <line x1="104" y1="45" x2="166" y2="30" stroke="rgba(255,255,255,0.15)" strokeWidth="1" />
+                  <circle cx="30" cy="30" r="4.5" fill="#9061f9" />
+                  <circle cx="100" cy="15" r="4.5" fill="#3b82f6" />
+                  <circle cx="100" cy="45" r="4.5" fill="#10b981" />
+                  <circle cx="170" cy="30" r="4.5" fill="#fff" />
+                  
+                  {/* Background static lines */}
+                  <line x1="34" y1="30" x2="96" y2="15" stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
+                  <line x1="34" y1="30" x2="96" y2="45" stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
+                  <line x1="104" y1="15" x2="166" y2="30" stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
+                  <line x1="104" y1="45" x2="166" y2="30" stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
+                  
+                  {/* Laser pulse animated lines */}
+                  <line x1="34" y1="30" x2="96" y2="15" stroke="#9061f9" strokeWidth="1.5" className="animate-dash" />
+                  <line x1="34" y1="30" x2="96" y2="45" stroke="#10b981" strokeWidth="1.5" className="animate-dash" style={{ animationDelay: '400ms' }} />
+                  <line x1="104" y1="15" x2="166" y2="30" stroke="#3b82f6" strokeWidth="1.5" className="animate-dash" style={{ animationDelay: '800ms' }} />
+                  <line x1="104" y1="45" x2="166" y2="30" stroke="#fff" strokeWidth="1.5" className="animate-dash" style={{ animationDelay: '1200ms' }} />
                 </svg>
               </div>
             </div>
@@ -303,16 +322,16 @@ export default function App() {
                   Attention analytics tracking LLM tokens and API response latencies.
                 </p>
               </div>
-              <div className="flex items-center gap-4 mt-4">
+              <div className="flex items-center gap-4 mt-4 bg-black/20 p-2 rounded-xl border border-white/5">
                 {/* SVG circular progress indicator */}
-                <svg className="w-10 h-10 transform -rotate-90">
-                  <circle cx="20" cy="20" r="16" stroke="rgba(255,255,255,0.05)" strokeWidth="3" fill="transparent" />
-                  <circle cx="20" cy="20" r="16" stroke="#9061f9" strokeWidth="3" fill="transparent" 
-                          strokeDasharray={100} strokeDashoffset={15} />
+                <svg className="w-12 h-12 transform -rotate-90">
+                  <circle cx="24" cy="24" r="18" stroke="rgba(255,255,255,0.05)" strokeWidth="3" fill="transparent" />
+                  <circle cx="24" cy="24" r="18" stroke="#9061f9" strokeWidth="3" fill="transparent" 
+                          strokeDasharray={113} strokeDashoffset={15} />
                 </svg>
                 <div>
                   <div className="text-xs font-semibold text-foreground">98.4% Efficiency</div>
-                  <div className="text-[10px] text-muted-foreground">Attention Matrix: Stable</div>
+                  <div className="text-[10px] text-muted-foreground">Attention: Optimal</div>
                 </div>
               </div>
             </div>
@@ -329,10 +348,29 @@ export default function App() {
                   Audited SaaS seed database. Integrates search matrix directly.
                 </p>
               </div>
-              <a href="#matrix" className="mt-4 flex items-center justify-between text-xs text-foreground bg-white/5 rounded-lg p-2.5 hover:bg-white/10 transition-colors">
-                <span>Explore 100 Apps</span>
-                <ChevronRight className="w-4 h-4" />
-              </a>
+              <div className="flex flex-col gap-3 mt-4">
+                <div className="h-10 w-full flex items-end">
+                  <svg className="w-full h-full" viewBox="0 0 160 40">
+                    <path 
+                      d="M 10 35 Q 30 10, 50 25 T 90 15 T 130 5 T 150 20" 
+                      fill="none" 
+                      stroke="rgba(255,255,255,0.06)" 
+                      strokeWidth="1" 
+                    />
+                    <path 
+                      d="M 10 35 Q 30 10, 50 25 T 90 15 T 130 5 T 150 20" 
+                      fill="none" 
+                      stroke="#3b82f6" 
+                      strokeWidth="1.5" 
+                      className="animate-draw-graph" 
+                    />
+                  </svg>
+                </div>
+                <a href="#matrix" className="flex items-center justify-between text-[10px] font-semibold text-foreground bg-white/5 rounded-lg p-2.5 hover:bg-white/10 transition-colors">
+                  <span>Explore 100 Apps</span>
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </a>
+              </div>
             </div>
 
           </div>
