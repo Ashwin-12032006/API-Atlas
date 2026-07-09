@@ -189,8 +189,15 @@ class VerificationPipeline:
         print("[Success] Verification report written to verification_report.json")
 
 def main():
+    import argparse
+    parser = argparse.ArgumentParser(description="Verify Research Agent Accuracy")
+    parser.add_argument("--sample", type=int, default=15, help="Number of apps to verify")
+    parser.add_argument("--interactive", action="store_true")
+    parser.add_argument("--stream", action="store_true")
+    args = parser.parse_args()
+
     pipeline = VerificationPipeline()
-    pipeline.run_verification(15)
+    pipeline.run_verification(args.sample)
 
 if __name__ == "__main__":
     main()

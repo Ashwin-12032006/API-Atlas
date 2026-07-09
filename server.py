@@ -9,19 +9,23 @@ PORT = 8000
 class MyHandler(http.server.SimpleHTTPRequestHandler):
     def do_GET(self):
         # API Endpoint for Live Agent Verification Execution
-        if self.path == '/run-verify':
+        if self.path.startswith('/run-verify'):
+            import urllib.parse
+            parsed_url = urllib.parse.urlparse(self.path)
+            query_components = urllib.parse.parse_qs(parsed_url.query)
+            sample_size = query_components.get('sample', ['15'])[0]
+
             self.send_response(200)
             self.send_header('Content-Type', 'text/event-stream')
             self.send_header('Cache-Control', 'no-cache')
             self.send_header('Connection', 'keep-alive')
-            self.send_header('Access-Control-Allow-Origin', '*')
             self.end_headers()
             
-            print("[Server] Starting verify_agent.py live execution stream...")
+            print(f"[Server] Starting verify_agent.py live execution stream (Sample: {sample_size})...")
             
             # Start verify_agent.py as an unbuffered subprocess (python -u)
             process = subprocess.Popen(
-                [sys.executable, '-u', 'verify_agent.py'],
+                [sys.executable, '-u', 'verify_agent.py', '--sample', sample_size],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 text=True,

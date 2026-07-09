@@ -1405,10 +1405,16 @@ def run_sherlock(username):
                     <div class="term-container">
                         <div class="term-body" id="verificationConsole">
                             <p class="term-log"><span class="term-prompt">host:~$</span> python verify_agent.py --sample 15 --interactive</p>
-                            <p style="color: var(--text-muted); font-size: 0.75rem;">Click the trigger button below to run discrepancy analysis on 15 random apps...</p>
+                            <p style="color: var(--text-muted); font-size: 0.75rem;">Select a sample size and click trigger to execute live verification subprocess...</p>
                         </div>
-                        <div>
-                            <button class="btn-terminal-run" onclick="triggerLiveVerification()"><i class="fa-solid fa-play"></i> Trigger Verification Loop</button>
+                        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                            <select id="verifySampleSize" class="custom-select" style="min-width: 160px; background: #111; border: 1px solid rgba(255,255,255,0.08); padding: 8px 12px; font-size: 0.8rem; color: #ccc; border-radius: 8px;">
+                                <option value="15">15 Apps (Sample)</option>
+                                <option value="30">30 Apps (Medium)</option>
+                                <option value="50">50 Apps (Large)</option>
+                                <option value="100">All 100 Apps (Full)</option>
+                            </select>
+                            <button class="btn-terminal-run" style="margin-top:0;" onclick="triggerLiveVerification()"><i class="fa-solid fa-play"></i> Run Verification</button>
                         </div>
                     </div>
                 </div>
@@ -1624,13 +1630,14 @@ def run_sherlock(username):
             if (verificationActive) return;
             verificationActive = true;
             
+            const sampleSize = document.getElementById("verifySampleSize").value;
             const consoleBox = document.getElementById("verificationConsole");
-            consoleBox.innerHTML = '<p class="term-log"><span class="term-prompt">host:~$</span> python verify_agent.py --interactive --stream</p>';
+            consoleBox.innerHTML = '<p class="term-log"><span class="term-prompt">host:~$</span> python verify_agent.py --sample ' + sampleSize + ' --stream</p>';
             
             appendTermLine("verificationConsole", "Connecting to Python backend event stream...", "term-log");
             
             // Connect to real SSE stream
-            eventSource = new EventSource('http://localhost:8000/run-verify');
+            eventSource = new EventSource('http://localhost:8000/run-verify?sample=' + sampleSize);
             
             eventSource.onmessage = function(event) {{
                 const line = event.data;
