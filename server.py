@@ -60,6 +60,46 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
         self.send_header('Access-Control-Allow-Origin', '*')
         super().end_headers()
 
+    def do_POST(self):
+        if self.path == '/add-app':
+            content_length = int(self.headers['Content-Length'])
+            post_data = self.rfile.read(content_length)
+            
+            import json
+            try:
+                new_app = json.loads(post_data.decode('utf-8'))
+                
+                results_path = 'research_results.json'
+                results = []
+                if os.path.exists(results_path):
+                    with open(results_path, 'r') as f:
+                        results = json.load(f)
+                
+                new_app['id'] = len(results) + 1
+                results.append(new_app)
+                
+                with open(results_path, 'w') as f:
+                    json.dump(results, f, indent=2)
+                
+                self.send_response(200)
+                self.send_header('Content-Type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({"status": "success", "app": new_app}).encode('utf-8'))
+                print(f"[Server] Successfully registered new SaaS app: {new_app['name']}")
+            except Exception as e:
+                self.send_response(500)
+                self.send_header('Content-Type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({"status": "error", "message": str(e)}).encode('utf-8'))
+                print(f"[Server Error] Failed to add app: {e}")
+            return
+
+    def do_OPTIONS(self):
+        self.send_response(200)
+        self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
+        self.end_headers()
+
 def main():
     # Set directory to workspace root to serve index.html correctly
     os.chdir(os.path.dirname(os.path.abspath(__file__)))

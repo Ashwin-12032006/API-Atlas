@@ -30,6 +30,7 @@ interface AppItem {
 
 export default function App() {
   // 100 Apps Database State
+  const [appsList, setAppsList] = useState<AppItem[]>(appsData);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedGating, setSelectedGating] = useState('');
@@ -38,6 +39,23 @@ export default function App() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [activeClusterTab, setActiveClusterTab] = useState('Self-Serve');
   const [copied, setCopied] = useState(false);
+
+  // Add App Modal State
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [newAppForm, setNewAppForm] = useState({
+    name: '',
+    category: 'Productivity',
+    one_liner: '',
+    auth: 'API Key',
+    gating: 'Self-serve',
+    api_surface: 'Public API exists',
+    verdict: 'Yes (Ready)',
+    evidence: 'https://docs.composio.dev'
+  });
+
+  // AI Conversational Search State
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [aiAssistantMsg, setAiAssistantMsg] = useState('');
   
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
@@ -64,15 +82,15 @@ export default function App() {
   }, [searchQuery, selectedCategory, selectedGating, selectedVerdict, pageSize]);
 
   // Compute Categories dynamically
-  const categories = Array.from(new Set(appsData.map(app => app.category)));
+  const categories = Array.from(new Set(appsList.map(app => app.category)));
 
   // Dynamic metrics calculation
-  const totalApps = appsData.length;
-  const selfServeCount = appsData.filter(app => !app.gating.toLowerCase().includes('gated')).length;
-  const aiReadyCount = appsData.filter(app => app.verdict.toLowerCase().includes('yes')).length;
+  const totalApps = appsList.length;
+  const selfServeCount = appsList.filter(app => !app.gating.toLowerCase().includes('gated')).length;
+  const aiReadyCount = appsList.filter(app => app.verdict.toLowerCase().includes('yes')).length;
 
   // Filter logic
-  const filteredApps = appsData.filter(app => {
+  const filteredApps = appsList.filter(app => {
     const matchesSearch = app.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
                           app.one_liner.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           app.auth.toLowerCase().includes(searchQuery.toLowerCase());
@@ -119,6 +137,103 @@ export default function App() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  // Natural Language AI Filter Parser
+  const handleAIQuery = () => {
+    if (!aiPrompt.trim()) return;
+    const prompt = aiPrompt.toLowerCase();
+    let categoriesMatched: string[] = [];
+    
+    categories.forEach(cat => {
+      if (prompt.includes(cat.toLowerCase())) {
+        categoriesMatched.push(cat);
+      }
+    });
+
+    let gatingSelected = '';
+    if (prompt.includes('gated') || prompt.includes('closed') || prompt.includes('private')) {
+      gatingSelected = 'Gated';
+    } else if (prompt.includes('self-serve') || prompt.includes('self serve') || prompt.includes('public') || prompt.includes('free')) {
+      gatingSelected = 'Self-serve';
+    }
+
+    let verdictSelected = '';
+    if (prompt.includes('ready') || prompt.includes('yes') || prompt.includes('buildable')) {
+      verdictSelected = 'Yes';
+    } else if (prompt.includes('blocker') || prompt.includes('no') || prompt.includes('unbuildable')) {
+      verdictSelected = 'No';
+    }
+
+    let searchQueryText = '';
+    if (prompt.includes('oauth') || prompt.includes('oauth2')) {
+      searchQueryText = 'OAuth2';
+    } else if (prompt.includes('api key') || prompt.includes('api_key') || prompt.includes('token')) {
+      searchQueryText = 'API Key';
+    } else if (prompt.includes('basic')) {
+      searchQueryText = 'Basic Auth';
+    }
+
+    if (categoriesMatched.length > 0) setSelectedCategory(categoriesMatched[0]);
+    if (gatingSelected) setSelectedGating(gatingSelected);
+    if (verdictSelected) setSelectedVerdict(verdictSelected);
+    if (searchQueryText) setSearchQuery(searchQueryText);
+
+    const msgParts = [];
+    if (categoriesMatched.length > 0) msgParts.push(`Category: ${categoriesMatched[0]}`);
+    if (gatingSelected) msgParts.push(`Gating: ${gatingSelected}`);
+    if (verdictSelected) msgParts.push(`Verdict: ${verdictSelected}`);
+    if (searchQueryText) msgParts.push(`Auth: ${searchQueryText}`);
+    
+    if (msgParts.length > 0) {
+      setAiAssistantMsg(`AI Filter Applied: ${msgParts.join(' | ')}`);
+    } else {
+      setSearchQuery(aiPrompt);
+      setAiAssistantMsg(`AI Searching database for: "${aiPrompt}"`);
+    }
+  };
+
+  // Add App Submission Flow (Write Back to JSON on Disk)
+  const handleAddAppSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const response = await fetch('http://localhost:8000/add-app', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(newAppForm)
+      });
+      
+      const data = await response.json();
+      if (data.status === 'success') {
+        const added: AppItem = data.app;
+        setAppsList(prev => [...prev, added]);
+        setIsAddModalOpen(false);
+        setNewAppForm({
+          name: '',
+          category: 'Productivity',
+          one_liner: '',
+          auth: 'API Key',
+          gating: 'Self-serve',
+          api_surface: 'Public API exists',
+          verdict: 'Yes (Ready)',
+          evidence: 'https://docs.composio.dev'
+        });
+        alert(`Successfully registered ${added.name} in the Atlas database!`);
+      } else {
+        alert(`Failed to register app: ${data.message}`);
+      }
+    } catch (err) {
+      console.error(err);
+      const fallbackApp: AppItem = {
+        id: appsList.length + 1,
+        ...newAppForm
+      };
+      setAppsList(prev => [...prev, fallbackApp]);
+      setIsAddModalOpen(false);
+      alert(`Local Fallback: Appended ${fallbackApp.name} locally. Start 'server.py' to save it permanently.`);
+    }
   };
 
   // Copy code snippet to clipboard
@@ -612,6 +727,34 @@ export default function App() {
             </p>
           </header>
 
+          {/* AI Prompt Assistant command bar */}
+          <div className="bg-white/5 border border-white/5 rounded-2xl p-4 mb-6">
+            <div className="flex items-center gap-2 mb-2 text-xs font-semibold text-foreground">
+              <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
+              <span>Atlas AI Assistant Query Parser</span>
+            </div>
+            <div className="flex gap-3">
+              <input 
+                type="text" 
+                placeholder="Enter conversational query... (e.g. 'Show me gated support apps using API Key')"
+                value={aiPrompt}
+                onChange={e => setAiPrompt(e.target.value)}
+                className="flex-1 bg-black/30 border border-white/5 rounded-xl px-4 py-2.5 text-xs text-foreground placeholder:text-muted-foreground outline-none focus:border-border"
+              />
+              <button 
+                onClick={handleAIQuery}
+                className="bg-white text-black font-semibold text-xs py-2.5 px-6 rounded-xl hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer shrink-0"
+              >
+                Analyze Query
+              </button>
+            </div>
+            {aiAssistantMsg && (
+              <div className="text-[10px] text-emerald-400 mt-2 font-mono">
+                {aiAssistantMsg}
+              </div>
+            )}
+          </div>
+
           {/* Filtering Action Bar */}
           <div className="flex flex-wrap gap-4 items-center justify-between mb-6">
             <div className="flex gap-4 flex-1 min-w-[280px]">
@@ -631,6 +774,12 @@ export default function App() {
               >
                 <FileText className="w-4 h-4" />
                 <span className="hidden sm:inline">Export CSV</span>
+              </button>
+              <button 
+                onClick={() => setIsAddModalOpen(true)}
+                className="bg-white text-black font-semibold text-xs py-3 px-4 rounded-xl hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-1.5 cursor-pointer shrink-0"
+              >
+                <span>+ Register Tool</span>
               </button>
             </div>
 
@@ -989,6 +1138,141 @@ export default function App() {
               </a>
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {/* Register Tool Modal */}
+      {isAddModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md p-4 animate-fade-rise">
+          <div className="bg-[#0c0e17] border border-white/10 rounded-2xl w-full max-w-lg p-6 relative">
+            <button 
+              onClick={() => setIsAddModalOpen(false)}
+              className="absolute top-4 right-4 text-muted-foreground hover:text-foreground text-xl cursor-pointer"
+            >
+              &times;
+            </button>
+            
+            <h3 className="text-xl font-normal text-foreground mb-4" style={{ fontFamily: "'Instrument Serif', serif" }}>
+              Register New SaaS Tool
+            </h3>
+            
+            <form onSubmit={handleAddAppSubmit} className="flex flex-col gap-4 text-xs">
+              <div>
+                <label className="block text-muted-foreground mb-1">App Name</label>
+                <input 
+                  type="text" 
+                  required
+                  value={newAppForm.name}
+                  onChange={e => setNewAppForm(prev => ({ ...prev, name: e.target.value }))}
+                  className="w-full bg-white/5 border border-white/5 rounded-xl p-2.5 text-foreground outline-none focus:border-border"
+                  placeholder="e.g. Acme CRM"
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-muted-foreground mb-1">Category</label>
+                  <select 
+                    value={newAppForm.category}
+                    onChange={e => setNewAppForm(prev => ({ ...prev, category: e.target.value }))}
+                    className="w-full bg-white/5 border border-white/5 rounded-xl p-2.5 text-foreground outline-none cursor-pointer focus:border-border"
+                  >
+                    <option value="Productivity">Productivity</option>
+                    <option value="CRM">CRM</option>
+                    <option value="Marketing">Marketing</option>
+                    <option value="HR / Workspace">HR / Workspace</option>
+                    <option value="Support">Support</option>
+                    <option value="Developer Platform">Developer Platform</option>
+                    <option value="Analytics">Analytics</option>
+                    <option value="Database">Database</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-muted-foreground mb-1">Auth Standard</label>
+                  <select 
+                    value={newAppForm.auth}
+                    onChange={e => setNewAppForm(prev => ({ ...prev, auth: e.target.value }))}
+                    className="w-full bg-white/5 border border-white/5 rounded-xl p-2.5 text-foreground outline-none cursor-pointer focus:border-border"
+                  >
+                    <option value="API Key">API Key</option>
+                    <option value="OAuth2">OAuth2</option>
+                    <option value="Basic Auth">Basic Auth</option>
+                    <option value="No Auth (CLI)">No Auth (CLI)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-muted-foreground mb-1">Gating Status</label>
+                  <select 
+                    value={newAppForm.gating}
+                    onChange={e => setNewAppForm(prev => ({ ...prev, gating: e.target.value }))}
+                    className="w-full bg-white/5 border border-white/5 rounded-xl p-2.5 text-foreground outline-none cursor-pointer focus:border-border"
+                  >
+                    <option value="Self-serve">Self-serve</option>
+                    <option value="Gated (Enterprise)">Gated (Enterprise)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-muted-foreground mb-1">Buildability Verdict</label>
+                  <select 
+                    value={newAppForm.verdict}
+                    onChange={e => setNewAppForm(prev => ({ ...prev, verdict: e.target.value }))}
+                    className="w-full bg-white/5 border border-white/5 rounded-xl p-2.5 text-foreground outline-none cursor-pointer focus:border-border"
+                  >
+                    <option value="Yes (Ready)">Yes (Ready)</option>
+                    <option value="Gated (Blockers)">Gated (Blockers)</option>
+                    <option value="No (Closed)">No (Closed)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-muted-foreground mb-1">One-Liner Description</label>
+                <input 
+                  type="text" 
+                  required
+                  value={newAppForm.one_liner}
+                  onChange={e => setNewAppForm(prev => ({ ...prev, one_liner: e.target.value }))}
+                  className="w-full bg-white/5 border border-white/5 rounded-xl p-2.5 text-foreground outline-none focus:border-border"
+                  placeholder="Short summary of app's toolification profile"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-muted-foreground mb-1">API Surface Area</label>
+                  <input 
+                    type="text" 
+                    required
+                    value={newAppForm.api_surface}
+                    onChange={e => setNewAppForm(prev => ({ ...prev, api_surface: e.target.value }))}
+                    className="w-full bg-white/5 border border-white/5 rounded-xl p-2.5 text-foreground outline-none focus:border-border"
+                    placeholder="e.g. REST API, CLI"
+                  />
+                </div>
+                <div>
+                  <label className="block text-muted-foreground mb-1">Documentation Link</label>
+                  <input 
+                    type="url" 
+                    required
+                    value={newAppForm.evidence}
+                    onChange={e => setNewAppForm(prev => ({ ...prev, evidence: e.target.value }))}
+                    className="w-full bg-white/5 border border-white/5 rounded-xl p-2.5 text-foreground outline-none focus:border-border"
+                    placeholder="https://..."
+                  />
+                </div>
+              </div>
+
+              <button 
+                type="submit"
+                className="w-full bg-white text-black font-semibold p-3.5 rounded-xl hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer text-xs mt-2"
+              >
+                Add App to Database
+              </button>
+            </form>
           </div>
         </div>
       )}
