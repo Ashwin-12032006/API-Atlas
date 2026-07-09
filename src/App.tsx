@@ -12,7 +12,8 @@ import {
   Brain, 
   Cpu, 
   Activity, 
-  LineChart 
+  LineChart,
+  FileText 
 } from 'lucide-react';
 
 interface AppItem {
@@ -37,6 +38,10 @@ export default function App() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [activeClusterTab, setActiveClusterTab] = useState('Self-Serve');
   const [copied, setCopied] = useState(false);
+  
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(15);
 
   // Live Verification Console State
   const [verificationActive, setVerificationActive] = useState(false);
@@ -52,6 +57,11 @@ export default function App() {
       el.scrollTop = el.scrollHeight;
     }
   }, [terminalLogs]);
+
+  // Reset pagination on filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, selectedCategory, selectedGating, selectedVerdict, pageSize]);
 
   // Compute Categories dynamically
   const categories = Array.from(new Set(appsData.map(app => app.category)));
@@ -81,6 +91,35 @@ export default function App() {
 
     return matchesSearch && matchesCategory && matchesGating && matchesVerdict;
   });
+
+  // Pagination & Export Logic
+  const totalPages = Math.ceil(filteredApps.length / pageSize);
+  const paginatedApps = filteredApps.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
+  const handleExportCSV = () => {
+    const headers = ["ID", "App Name", "Category", "Description", "Auth Standards", "Gating Status", "API Surface", "Verdict", "Evidence Docs Link"];
+    const rows = filteredApps.map(app => [
+      app.id,
+      `"${app.name.replace(/"/g, '""')}"`,
+      `"${app.category.replace(/"/g, '""')}"`,
+      `"${app.one_liner.replace(/"/g, '""')}"`,
+      `"${app.auth.replace(/"/g, '""')}"`,
+      `"${app.gating.replace(/"/g, '""')}"`,
+      `"${app.api_surface.replace(/"/g, '""')}"`,
+      `"${app.verdict.replace(/"/g, '""')}"`,
+      `"${app.evidence.replace(/"/g, '""')}"`
+    ]);
+
+    const csvContent = [headers.join(","), ...rows.map(e => e.join(","))].join("\n");
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", "composio_saas_audit_atlas.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   // Copy code snippet to clipboard
   const handleCopyCode = (text: string) => {
@@ -575,15 +614,24 @@ export default function App() {
 
           {/* Filtering Action Bar */}
           <div className="flex flex-wrap gap-4 items-center justify-between mb-6">
-            <div className="relative flex-1 min-w-[280px]">
-              <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
-              <input 
-                type="text" 
-                placeholder="Search app, description, or auth standard..."
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                className="w-full bg-white/5 border border-white/5 rounded-xl py-3 pl-10 pr-4 text-xs text-foreground placeholder:text-muted-foreground outline-none focus:border-border transition-colors"
-              />
+            <div className="flex gap-4 flex-1 min-w-[280px]">
+              <div className="relative flex-1">
+                <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
+                <input 
+                  type="text" 
+                  placeholder="Search app, description, or auth standard..."
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  className="w-full bg-white/5 border border-white/5 rounded-xl py-3 pl-10 pr-4 text-xs text-foreground placeholder:text-muted-foreground outline-none focus:border-border transition-colors"
+                />
+              </div>
+              <button 
+                onClick={handleExportCSV}
+                className="bg-white/5 border border-white/5 rounded-xl px-4 py-3 text-xs text-foreground hover:bg-white/10 transition-colors flex items-center gap-2 cursor-pointer shrink-0"
+              >
+                <FileText className="w-4 h-4" />
+                <span className="hidden sm:inline">Export CSV</span>
+              </button>
             </div>
 
             <div className="flex gap-4 flex-wrap">
@@ -633,11 +681,13 @@ export default function App() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
-                {filteredApps.slice(0, 15).map((app) => (
+                {paginatedApps.map((app) => (
                   <tr 
                     key={app.id} 
                     onClick={() => { setSelectedApp(app); setIsDrawerOpen(true); }}
-                    className="hover:bg-white/5 cursor-pointer transition-colors"
+                    className={`hover:bg-white/5 cursor-pointer transition-colors ${
+                      selectedApp?.id === app.id ? 'bg-white/10 border-l-2 border-white' : ''
+                    }`}
                   >
                     <td className="py-4 px-6 text-muted-foreground">{app.id}</td>
                     <td className="py-4 px-6 font-semibold flex items-center gap-2">
@@ -669,11 +719,44 @@ export default function App() {
               </tbody>
             </table>
           </div>
-          {filteredApps.length > 15 && (
-            <div className="text-center text-xs text-muted-foreground mt-4">
-              Showing top 15 results out of {filteredApps.length} matched apps. Apply queries above to narrow results.
+
+          {/* Pagination Controls */}
+          <div className="flex flex-wrap items-center justify-between gap-4 mt-6 text-xs text-muted-foreground">
+            <div className="flex items-center gap-2">
+              <span>Show</span>
+              <select 
+                value={pageSize} 
+                onChange={e => { setPageSize(Number(e.target.value)); setCurrentPage(1); }}
+                className="bg-white/5 border border-white/5 rounded-lg px-2 py-1 text-[11px] text-foreground outline-none cursor-pointer"
+              >
+                <option value="15">15 rows</option>
+                <option value="25">25 rows</option>
+                <option value="50">50 rows</option>
+                <option value="100">100 rows</option>
+              </select>
+              <span>of {filteredApps.length} entries</span>
             </div>
-          )}
+
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+                className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/5 hover:bg-white/10 disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer"
+              >
+                Previous
+              </button>
+              <span className="font-semibold text-foreground">
+                Page {currentPage} of {totalPages || 1}
+              </span>
+              <button 
+                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                disabled={currentPage === totalPages || totalPages === 0}
+                className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/5 hover:bg-white/10 disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer"
+              >
+                Next
+              </button>
+            </div>
+          </div>
         </section>
 
         {/* Section 5: Verification System Staggered Reveal / Console */}
