@@ -178,21 +178,21 @@ export default function App() {
 
         <nav className="hidden md:flex items-center gap-8">
           <a href="#" className="text-xs font-semibold uppercase tracking-wider text-foreground">
-            Home
+            Atlas
           </a>
           <a href="#dashboard" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground transition-colors hover:text-foreground">
-            Studio
+            HUD Overview
           </a>
           <a href="#matrix" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground transition-colors hover:text-foreground">
-            About
+            SaaS Matrix
           </a>
           <a href="#pipeline" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground transition-colors hover:text-foreground">
-            Journal
+            Verification
           </a>
         </nav>
 
         <a href="#matrix" className="liquid-glass rounded-full px-5 py-2 text-xs font-semibold uppercase tracking-wider text-foreground hover:scale-[1.03] transition-transform duration-300 ease-out">
-          Begin Journey
+          Explore Atlas
         </a>
       </header>
 
@@ -205,16 +205,16 @@ export default function App() {
             className="text-5xl sm:text-7xl md:text-8xl leading-[0.95] tracking-[-2.46px] max-w-6xl font-normal text-foreground animate-fade-rise"
             style={{ fontFamily: "'Instrument Serif', serif" }}
           >
-            Where <em className="not-italic text-muted-foreground">dreams</em> rise <br />
-            <em className="not-italic text-muted-foreground">through the silence.</em>
+            Where <em className="not-italic text-muted-foreground">intelligence</em> meets <br />
+            <em className="not-italic text-muted-foreground">the API surface.</em>
           </h1>
           
           <p className="text-muted-foreground text-sm sm:text-base max-w-xl mt-8 leading-relaxed animate-fade-rise-delay">
-            We're designing tools for deep thinkers, bold creators, and quiet rebels. Amid the chaos, we build digital spaces for sharp focus and inspired work.
+            An agentic audit mapping authentication standards, gating parameters, and integration blockages across 100 SaaS applications for Composio toolification.
           </p>
 
-          <a href="#dashboard" className="liquid-glass rounded-full px-12 py-4.5 text-xs font-semibold uppercase tracking-wider text-foreground mt-12 hover:scale-[1.03] transition-transform duration-300 ease-out animate-fade-rise-delay-2">
-            Begin Journey
+          <a href="#matrix" className="liquid-glass rounded-full px-12 py-4.5 text-xs font-semibold uppercase tracking-wider text-foreground mt-12 hover:scale-[1.03] transition-transform duration-300 ease-out animate-fade-rise-delay-2">
+            Explore Atlas
           </a>
         </div>
 
