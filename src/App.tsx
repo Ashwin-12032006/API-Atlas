@@ -173,7 +173,7 @@ export default function App() {
           className="text-2xl tracking-tight text-foreground transition-opacity hover:opacity-90"
           style={{ fontFamily: "'Instrument Serif', serif" }}
         >
-          Velorah<sup className="text-xs">®</sup>
+          Atlas API<sup className="text-xs">®</sup>
         </a>
 
         <nav className="hidden md:flex items-center gap-8">
@@ -765,10 +765,10 @@ export default function App() {
         <footer className="border-t border-border/40 py-16 text-center text-xs text-muted-foreground">
           <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
             <div className="text-lg tracking-tight text-foreground" style={{ fontFamily: "'Instrument Serif', serif" }}>
-              Velorah<sup className="text-[10px]">®</sup>
+              Atlas API<sup className="text-[10px]">®</sup>
             </div>
             <div>
-              &copy; {new Date().getFullYear()} Velorah AI Systems Inc. Case Study Audited for Composio.
+              &copy; {new Date().getFullYear()} Atlas API Inc. Case Study Audited for Composio.
             </div>
             <div className="flex gap-6">
               <a href="#" className="hover:text-foreground transition-colors">Privacy Policy</a>
