@@ -1,0 +1,75 @@
+import http.server
+import socketserver
+import subprocess
+import sys
+import os
+
+PORT = 8000
+
+class MyHandler(http.server.SimpleHTTPRequestHandler):
+    def do_GET(self):
+        # API Endpoint for Live Agent Verification Execution
+        if self.path == '/run-verify':
+            self.send_response(200)
+            self.send_header('Content-Type', 'text/event-stream')
+            self.send_header('Cache-Control', 'no-cache')
+            self.send_header('Connection', 'keep-alive')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            
+            print("[Server] Starting verify_agent.py live execution stream...")
+            
+            # Start verify_agent.py as an unbuffered subprocess (python -u)
+            process = subprocess.Popen(
+                [sys.executable, '-u', 'verify_agent.py'],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                bufsize=1,
+                cwd=os.getcwd()
+            )
+            
+            # Stream the stdout line by line to the browser in real-time
+            try:
+                for line in iter(process.stdout.readline, ''):
+                    if not line:
+                        break
+                    # Format as standard Server-Sent Event data
+                    clean_line = line.strip('\n')
+                    self.wfile.write(f"data: {clean_line}\n\n".encode('utf-8'))
+                    self.wfile.flush()
+            except Exception as e:
+                print(f"[Server Error] Streaming interrupted: {e}")
+            finally:
+                process.stdout.close()
+                process.wait()
+                
+            # Signal the end of the stream
+            self.wfile.write("data: [DONE]\n\n".encode('utf-8'))
+            self.wfile.flush()
+            print("[Server] Live verification stream completed successfully.")
+            return
+        else:
+            return super().do_GET()
+
+def main():
+    # Set directory to workspace root to serve index.html correctly
+    os.chdir(os.path.dirname(os.path.abspath(__file__)))
+    
+    # Allow port reuse
+    socketserver.TCPServer.allow_reuse_address = True
+    
+    with socketserver.TCPServer(("", PORT), MyHandler) as httpd:
+        print(f"==================================================")
+        print(f"Composio Product Ops Case Study Local Server")
+        print(f"Serving at: http://localhost:{PORT}")
+        print(f"Live Verification Endpoint: http://localhost:{PORT}/run-verify")
+        print(f"==================================================")
+        try:
+            httpd.serve_forever()
+        except KeyboardInterrupt:
+            print("\nShutting down server.")
+            httpd.shutdown()
+
+if __name__ == "__main__":
+    main()
